@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export type ShapeType = 'character';
+export type ShapeType = 'character' | 'box' | 'cube' | 'tetrahedron';
 
 export interface ShapeDef {
   type: ShapeType;
@@ -85,14 +85,62 @@ function buildCharacterMesh(colorHex: number): THREE.Group {
   return group;
 }
 
+function buildBoxMesh(colorHex: number): THREE.Group {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.5 });
+  const geo = new THREE.BoxGeometry(0.8, 0.5, 0.6);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = 0.3;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  return group;
+}
+
+function buildCubeMesh(colorHex: number): THREE.Group {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.5 });
+  const geo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = 0.35;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  return group;
+}
+
+function buildTetrahedronMesh(colorHex: number): THREE.Group {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.5, flatShading: true });
+  const geo = new THREE.TetrahedronGeometry(0.5);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = 0.35;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  return group;
+}
+
 // ── Registry ──────────────────────────────────────────────────────
 
 export const SHAPE_DEFS: ShapeDef[] = [
   { type: 'character', labelKey: 'director3d.character', defaultScale: { x: 1.2, y: 1.2, z: 1.2 }, buildMesh: buildCharacterMesh },
+  { type: 'box', labelKey: 'director3d.shapeBox', defaultScale: { x: 1, y: 1, z: 1 }, buildMesh: buildBoxMesh },
+  { type: 'cube', labelKey: 'director3d.shapeCube', defaultScale: { x: 1, y: 1, z: 1 }, buildMesh: buildCubeMesh },
+  { type: 'tetrahedron', labelKey: 'director3d.shapeTetrahedron', defaultScale: { x: 1, y: 1, z: 1 }, buildMesh: buildTetrahedronMesh },
 ];
 
-export function buildMeshForType(_type: ShapeType, colorHex: number): THREE.Group {
-  return buildCharacterMesh(colorHex);
+const builderMap = new Map<ShapeType, (colorHex: number) => THREE.Group>();
+for (const def of SHAPE_DEFS) {
+  builderMap.set(def.type, def.buildMesh);
+}
+
+export function buildMeshForType(type: ShapeType, colorHex: number): THREE.Group {
+  const builder = builderMap.get(type);
+  if (!builder) {
+    return buildCharacterMesh(colorHex);
+  }
+  return builder(colorHex);
 }
 
 export function getShapeDef(type: ShapeType): ShapeDef | undefined {

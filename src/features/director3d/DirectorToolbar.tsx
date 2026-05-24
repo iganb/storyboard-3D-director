@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Video,
@@ -16,9 +17,12 @@ import {
   ArrowLeft,
   ArrowRight,
   Eye,
+  ChevronDown,
+  Box,
+  LayoutGrid,
 } from 'lucide-react';
 import { useDirector3DStore, type TransformMode } from '@/stores/director3dStore';
-import { CHARACTER_PALETTE } from './shapes';
+import { CHARACTER_PALETTE, SHAPE_DEFS, getShapeDef } from './shapes';
 
 export interface CameraPreset {
   pos: { x: number; y: number; z: number };
@@ -70,6 +74,7 @@ interface DirectorToolbarProps {
   screenshotRatio: '16:9' | '9:16';
   onScreenshotRatioChange: (ratio: '16:9' | '9:16') => void;
   onSelectPreset: (preset: CameraPreset) => void;
+  onPlaceGrid: (rows: number, cols: number) => void;
   onQuickAddCharacter: (color: string) => void;
 }
 
@@ -88,6 +93,7 @@ export function DirectorToolbar({
   screenshotRatio,
   onScreenshotRatioChange,
   onSelectPreset,
+  onPlaceGrid,
   onQuickAddCharacter,
 }: DirectorToolbarProps) {
   const { t } = useTranslation();
@@ -95,6 +101,25 @@ export function DirectorToolbar({
   const setTransformMode = useDirector3DStore((s) => s.setTransformMode);
   const placementMode = useDirector3DStore((s) => s.placementMode);
   const setPlacementMode = useDirector3DStore((s) => s.setPlacementMode);
+  const placementShapeType = useDirector3DStore((s) => s.placementShapeType);
+  const setPlacementShapeType = useDirector3DStore((s) => s.setPlacementShapeType);
+  const gridRows = useDirector3DStore((s) => s.gridRows);
+  const setGridRows = useDirector3DStore((s) => s.setGridRows);
+  const gridCols = useDirector3DStore((s) => s.gridCols);
+  const setGridCols = useDirector3DStore((s) => s.setGridCols);
+  const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
+  const shapeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!shapeDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (shapeDropdownRef.current && !shapeDropdownRef.current.contains(e.target as Node)) {
+        setShapeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [shapeDropdownOpen]);
 
   return (
     <div className="h-10 flex items-center justify-between bg-surface-dark border-b border-border-dark px-4 select-none">
@@ -148,6 +173,53 @@ export function DirectorToolbar({
 
         <div className="w-px h-4 bg-border-dark mx-1" />
 
+        {/* Shape dropdown */}
+        <div className="relative" ref={shapeDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setShapeDropdownOpen(!shapeDropdownOpen)}
+            className={`h-7 px-2 flex items-center gap-1 text-xs rounded transition-colors ${
+              placementMode
+                ? 'bg-accent text-white'
+                : 'text-text-muted hover:bg-bg-dark hover:text-text-dark'
+            }`}
+            title={t('director3d.shapeDropdown')}
+          >
+            <Box className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t(getShapeDef(placementShapeType)?.labelKey ?? 'director3d.character')}</span>
+            <ChevronDown className="w-3 h-3" />
+          </button>
+          {shapeDropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 w-36 bg-surface-dark border border-border-dark rounded shadow-lg z-50 py-1">
+              {SHAPE_DEFS.map((def) => (
+                <button
+                  key={def.type}
+                  type="button"
+                  onClick={() => {
+                    setPlacementShapeType(def.type);
+                    if (def.type !== 'character') {
+                      setPlacementMode(true);
+                    } else {
+                      setPlacementMode(false);
+                    }
+                    setShapeDropdownOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
+                    placementShapeType === def.type
+                      ? 'text-accent bg-accent/10'
+                      : 'text-text-dark hover:bg-bg-dark'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${placementShapeType === def.type ? 'bg-accent' : 'bg-border-dark'}`} />
+                  {t(def.labelKey)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="w-px h-4 bg-border-dark mx-1" />
+
         <button
           type="button"
           onClick={() => setPlacementMode(!placementMode)}
@@ -156,11 +228,44 @@ export function DirectorToolbar({
               ? 'bg-accent text-white'
               : 'text-text-muted hover:bg-bg-dark hover:text-text-dark'
           }`}
-          title={t('director3d.placeCharacter')}
+          title={t('director3d.placeObject')}
         >
           <MousePointer2 className="w-3.5 h-3.5" />
           <UserPlus className="w-3 h-3" />
         </button>
+
+        <div className="w-px h-4 bg-border-dark mx-1" />
+
+        {/* Grid matrix placement */}
+        <div className="flex items-center gap-0.5">
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={gridRows}
+            onChange={(e) => setGridRows(Number(e.target.value))}
+            className="h-6 w-8 text-[11px] text-center bg-bg-dark rounded border border-border-dark text-text-dark outline-none focus:border-accent/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            title={t('director3d.gridRows')}
+          />
+          <span className="text-[10px] text-text-muted">×</span>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={gridCols}
+            onChange={(e) => setGridCols(Number(e.target.value))}
+            className="h-6 w-8 text-[11px] text-center bg-bg-dark rounded border border-border-dark text-text-dark outline-none focus:border-accent/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            title={t('director3d.gridCols')}
+          />
+          <button
+            type="button"
+            onClick={() => onPlaceGrid(gridRows, gridCols)}
+            className="h-7 px-2 flex items-center gap-1 text-xs rounded transition-colors text-text-muted hover:bg-bg-dark hover:text-text-dark"
+            title={t('director3d.gridPlace')}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
         <div className="w-px h-4 bg-border-dark mx-1" />
 

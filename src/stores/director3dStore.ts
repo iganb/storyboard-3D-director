@@ -33,6 +33,9 @@ interface Director3DState {
   selectedObjectIds: string[];
   transformMode: TransformMode;
   placementMode: boolean;
+  placementShapeType: ShapeType;
+  gridRows: number;
+  gridCols: number;
 
   enterDirector3D: () => void;
   leaveDirector3D: () => void;
@@ -57,6 +60,9 @@ interface Director3DState {
   resetObjectAxis: (id: string, field: 'position' | 'rotation' | 'scale', axis: 'x' | 'y' | 'z') => void;
   setTransformMode: (mode: TransformMode) => void;
   setPlacementMode: (active: boolean) => void;
+  setPlacementShapeType: (type: ShapeType) => void;
+  setGridRows: (rows: number) => void;
+  setGridCols: (cols: number) => void;
 }
 
 export const useDirector3DStore = create<Director3DState>((set) => ({
@@ -67,6 +73,9 @@ export const useDirector3DStore = create<Director3DState>((set) => ({
   selectedObjectIds: [],
   transformMode: 'translate',
   placementMode: false,
+  placementShapeType: 'character',
+  gridRows: 3,
+  gridCols: 5,
 
   enterDirector3D: () => set({ isActive: true }),
   leaveDirector3D: () =>
@@ -182,5 +191,9 @@ export const useDirector3DStore = create<Director3DState>((set) => ({
       placementMode: active,
       selectedObjectIds: active ? [] : [],
     }),
+
+  setPlacementShapeType: (type) => set({ placementShapeType: type }),
+  setGridRows: (rows) => set({ gridRows: Math.max(1, Math.min(20, Math.round(rows))) }),
+  setGridCols: (cols) => set({ gridCols: Math.max(1, Math.min(20, Math.round(cols))) }),
 
 }));

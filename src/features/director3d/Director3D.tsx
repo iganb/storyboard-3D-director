@@ -12,6 +12,7 @@ import { CharacterPanel } from './CharacterPanel';
 import { CameraPanel } from './CameraPanel';
 import {
   buildMeshForType,
+  getShapeDef,
   hexStringToNumber,
   type ShapeType,
 } from './shapes';
@@ -41,6 +42,7 @@ export function Director3D() {
   const keysRef = useRef<Set<string>>(new Set());
   const orbitTargetRef = useRef(new THREE.Vector3(0, 1, 0));
   const objectMapRef = useRef<Map<string, THREE.Group>>(new Map());
+  const highlightMapRef = useRef<Map<string, THREE.BoxHelper>>(new Map());
   const isTransformingRef = useRef(false);
 
   // Camera transition (smooth lerp)
@@ -507,6 +509,11 @@ export function Director3D() {
 
       const isRightDrag = pd.button === 2 || pd.shift;
 
+      // Suppress right-drag orbit when placement is active (right-click cancels)
+      if (pd.button === 2 && useDirector3DStore.getState().placementMode) {
+        return;
+      }
+
       if (isRightDrag) {
         // Orbit
         const pivot = orbitTargetRef.current;
@@ -602,6 +609,14 @@ export function Director3D() {
         return;
       }
 
+      // Right-click cancels placement mode
+      if (e.button === 2 && useDirector3DStore.getState().placementMode) {
+        useDirector3DStore.getState().setPlacementMode(false);
+        isDraggingRef.current = false;
+        pointerDownRef.current = { x: 0, y: 0, button: -1, ctrl: false, shift: false, time: 0 };
+        return;
+      }
+
       // Only handle left-button click
       if (e.button !== 0 || pd.button !== 0 || pd.shift) return;
 
@@ -610,19 +625,22 @@ export function Director3D() {
       MOUSE.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       RAYCASTER.setFromCamera(MOUSE, camera);
 
-      // Placement mode: click ground to place single character
+      // Placement mode: click ground to place shape
       if (useDirector3DStore.getState().placementMode) {
         const intersects = RAYCASTER.intersectObject(ground, false);
         if (intersects.length > 0) {
           const pt = intersects[0].point;
           const st = useDirector3DStore.getState();
-          const count = st.sceneObjects.filter((o) => o.type === 'character').length;
+          const shapeType = st.placementShapeType;
+          const shapeDef = getShapeDef(shapeType);
+          const defaultScale = shapeDef?.defaultScale ?? { x: 1, y: 1, z: 1 };
+          const count = st.sceneObjects.filter((o) => o.type === shapeType).length;
           st.addSceneObject({
-            type: 'character',
-            label: `character ${count + 1}`,
+            type: shapeType,
+            label: `${shapeType} ${count + 1}`,
             position: { x: pt.x, y: 0, z: pt.z },
             rotation: { x: 0, y: 0, z: 0 },
-            scale: { x: 1.2, y: 1.2, z: 1.2 },
+            scale: { ...defaultScale },
           });
         }
         isDraggingRef.current = false;
@@ -823,6 +841,30 @@ export function Director3D() {
       // Sync transform mode
       tc.setMode(useDirector3DStore.getState().transformMode);
 
+      // Sync selection highlights (BoxHelper outline)
+      const hlMap = highlightMapRef.current;
+      for (const [id, box] of hlMap) {
+        if (!sIds.includes(id)) {
+          scene.remove(box);
+          hlMap.delete(id);
+        }
+      }
+      for (const id of sIds) {
+        if (!hlMap.has(id)) {
+          const group = map.get(id);
+          if (group) {
+            const box = new THREE.BoxHelper(group, 0xf5a623);
+            box.name = `highlight-${id}`;
+            scene.add(box);
+            hlMap.set(id, box);
+          }
+        }
+      }
+      // Update all active highlights
+      for (const [, box] of hlMap) {
+        box.update();
+      }
+
       renderer.render(scene, camera);
     }
 
@@ -846,6 +888,7 @@ export function Director3D() {
         container.removeChild(renderer.domElement);
       }
       objectMapRef.current.clear();
+      highlightMapRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -855,6 +898,7 @@ export function Director3D() {
     const tc = transformRef.current;
     const scene = sceneRef.current;
     const map = objectMapRef.current;
+    const hlMap = highlightMapRef.current;
     if (!tc || !scene) return;
 
     if (selectedObjectIds.length === 0) {
@@ -865,6 +909,11 @@ export function Director3D() {
         children.forEach((child) => scene.attach(child));
       }
       tc.detach();
+      // Remove all highlights
+      for (const [, box] of hlMap) {
+        scene.remove(box);
+      }
+      hlMap.clear();
     } else if (selectedObjectIds.length === 1) {
       // Reparent from selection group, attach directly
       const selGroup = selectionGroupRef.current;
@@ -874,6 +923,7 @@ export function Director3D() {
       }
       const obj = map.get(selectedObjectIds[0]);
       if (obj && tc.object !== obj) {
+        if (tc.object) tc.detach();
         tc.attach(obj);
       }
     }
@@ -1009,6 +1059,29 @@ export function Director3D() {
     [startCameraTransition],
   );
 
+  const handlePlaceGrid = useCallback((rows: number, cols: number) => {
+    const st = useDirector3DStore.getState();
+    const spacing = 1.5;
+    const offsetX = (cols - 1) * spacing / 2;
+    const offsetZ = (rows - 1) * spacing / 2;
+    const newIds: string[] = [];
+    let count = st.sceneObjects.length;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        count++;
+        const id = st.addSceneObject({
+          type: 'character',
+          label: `character ${count}`,
+          position: { x: col * spacing - offsetX, y: 0, z: row * spacing - offsetZ },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1.2, y: 1.2, z: 1.2 },
+        });
+        newIds.push(id);
+      }
+    }
+    st.setSelectedObjects(newIds);
+  }, []);
+
   const handleQuickAddCharacter = useCallback((color: string) => {
     const cam = cameraRef.current;
     if (!cam) return;
@@ -1052,6 +1125,7 @@ export function Director3D() {
         screenshotRatio={director3dScreenshotRatio}
         onScreenshotRatioChange={setDirector3dScreenshotRatio}
         onSelectPreset={handleSelectPreset}
+        onPlaceGrid={handlePlaceGrid}
         onQuickAddCharacter={handleQuickAddCharacter}
       />
       <div className="flex-1 flex relative">

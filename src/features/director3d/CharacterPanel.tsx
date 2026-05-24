@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Trash2, Move, Rotate3D, Maximize2, Undo2 } from 'lucide-react';
+import { User, Trash2, Move, Rotate3D, Maximize2, Undo2, Lock, Unlock } from 'lucide-react';
 import { useDirector3DStore } from '@/stores/director3dStore';
 import { CHARACTER_PALETTE, getShapeDef } from './shapes';
 
@@ -66,6 +66,8 @@ export function CharacterPanel() {
     },
     [selected, updateObjectTransform],
   );
+
+  const [scaleUniform, setScaleUniform] = useState(true);
 
   const handleBatchColorChange = useCallback(
     (hex: string) => {
@@ -225,23 +227,65 @@ export function CharacterPanel() {
           </div>
         </div>
 
-        {/* Scale (uniform) */}
+        {/* Scale */}
         <div>
-          <label className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-1.5 flex items-center gap-1">
-            <Maximize2 className="w-3 h-3" />
-            {t('director3d.scale')}
-          </label>
-          <NumberField label="S" value={selected.scale.x} step={0.05} onChange={(v) => {
-            const val = Math.max(0.01, v);
-            updateObjectTransform(selected.id, {
-              scale: { x: val, y: val, z: val },
-            });
-          }} onReset={() => {
-            if (selected.initialScale) {
-              const s = selected.initialScale;
-              updateObjectTransform(selected.id, { scale: { x: s.x, y: s.y, z: s.z } });
-            }
-          }} />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[10px] text-text-muted uppercase tracking-wider font-medium flex items-center gap-1">
+              <Maximize2 className="w-3 h-3" />
+              {t('director3d.scale')}
+            </label>
+            <button
+              type="button"
+              onClick={() => setScaleUniform(!scaleUniform)}
+              className="p-0.5 rounded hover:bg-bg-dark text-text-muted hover:text-accent transition-colors"
+              title={scaleUniform ? t('director3d.nonUniformScale') : t('director3d.uniformScale')}
+            >
+              {scaleUniform ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+            </button>
+          </div>
+          {scaleUniform ? (
+            <NumberField label="S" value={selected.scale.x} step={0.05} onChange={(v) => {
+              const val = Math.max(0.01, v);
+              updateObjectTransform(selected.id, {
+                scale: { x: val, y: val, z: val },
+              });
+            }} onReset={() => {
+              if (selected.initialScale) {
+                const s = selected.initialScale;
+                updateObjectTransform(selected.id, { scale: { x: s.x, y: s.y, z: s.z } });
+              }
+            }} />
+          ) : (
+            <div className="space-y-1">
+              <NumberField label="X" value={selected.scale.x} step={0.05} onChange={(v) => {
+                updateObjectTransform(selected.id, {
+                  scale: { ...selected.scale, x: Math.max(0.01, v) },
+                });
+              }} onReset={() => {
+                if (selected.initialScale) {
+                  updateObjectTransform(selected.id, { scale: { ...selected.scale, x: selected.initialScale.x } });
+                }
+              }} />
+              <NumberField label="Y" value={selected.scale.y} step={0.05} onChange={(v) => {
+                updateObjectTransform(selected.id, {
+                  scale: { ...selected.scale, y: Math.max(0.01, v) },
+                });
+              }} onReset={() => {
+                if (selected.initialScale) {
+                  updateObjectTransform(selected.id, { scale: { ...selected.scale, y: selected.initialScale.y } });
+                }
+              }} />
+              <NumberField label="Z" value={selected.scale.z} step={0.05} onChange={(v) => {
+                updateObjectTransform(selected.id, {
+                  scale: { ...selected.scale, z: Math.max(0.01, v) },
+                });
+              }} onReset={() => {
+                if (selected.initialScale) {
+                  updateObjectTransform(selected.id, { scale: { ...selected.scale, z: selected.initialScale.z } });
+                }
+              }} />
+            </div>
+          )}
         </div>
       </div>
     </div>
