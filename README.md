@@ -1,47 +1,11 @@
 <div align="center">
-  <img src="./src-tauri/icons/128x128@2x.png" width="100" height="100" alt="Storyboard Copilot" style="margin-bottom: -50px;">
-  <h1 style="color: ##111227;">分镜助手</h1>
-  <h3>基于节点画布的 AI 分镜工作台，一站式完成图片生成、编辑与分镜流程</h3>
-
-  [![Bilibili](https://img.shields.io/badge/bilibili-痕继痕迹-00AEEC?logo=bilibili)](https://space.bilibili.com/39337803)
+  <h1>Storyboard 3D Director</h1>
+  <h3>基于节点画布的 AI 分镜工作台 + 3D 导演台，一站式完成图片生成、编辑、3D 场景编排与分镜流程</h3>
 </div>
-
-<div align="center">
-  <img src="./docs/imgs/readme/storyboard-copilot-homepage.webp" alt="Storyboard Copilot 首页截图" width="820" />
-</div>
-
-## 下载
-
-<div align="center">
-Windows 用户请下载 <strong>.exe</strong> 文件，macOS 用户请下载 <strong>.dmg</strong> 文件
-
-Windows 用户如果在启动时遇到了报错，请尝试安装 [WebView2 运行时](https://developer.microsoft.com/zh-cn/Microsoft-edge/webview2#download)
-
-### Github 下载
-[![Download Latest Release](https://img.shields.io/github/v/release/henjicc/Storyboard-Copilot?style=for-the-badge&color=blue)](https://github.com/henjicc/Storyboard-Copilot/releases/latest)
-
-### 网盘下载
-**夸克网盘**：[https://pan.quark.cn/s/5b6733a8fc8e](https://pan.quark.cn/s/5b6733a8fc8e)
-
-</div>
-
-## 赞助
-
-<div align="center">
-  <div style="text-align: center; font-weight: 700; margin-bottom: 10px; font-size: 20px;">
-    <a href="https://platform.minimaxi.com/subscribe/token-plan?code=8XOI15IbO4&source=link" target="_blank" style="color: #f0440bff; text-decoration: none;">
-      MiniMax M2.7 Token Plan 专属 88 折优惠
-    </a>
-  </div>
-  <a href="https://platform.minimaxi.com/subscribe/token-plan?code=8XOI15IbO4&source=link" target="_blank">
-    <img src="./docs/imgs/readme/token_plan.webp" alt="MiniMax Coding Plan" width="720">
-  </a>
-</div>
-
 
 ## 技术栈
 
-- 前端：React 18 + TypeScript + Zustand + `@xyflow/react` + TailwindCSS
+- 前端：React 18 + TypeScript + Zustand + `@xyflow/react` + TailwindCSS + Three.js
 - 桌面容器：Tauri 2
 - 后端：Rust 命令接口
 - 数据存储：SQLite（`rusqlite`，WAL）
@@ -53,9 +17,6 @@ Windows 用户如果在启动时遇到了报错，请尝试安装 [WebView2 运�
 - npm 10+
 - Rust stable（含 Cargo）
 - Tauri 平台依赖（Windows/macOS）
-
-安装与平台准备可参考：
-- [基础工具安装配置（Windows / macOS）](./docs/development-guides/base-tools-installation.md)
 
 ## 快速开始
 
@@ -91,29 +52,12 @@ npm run build
 npm run tauri build
 ```
 
-## 一键发布（自动构建 + Release）
-
-本项目支持一条命令完成版本联动、触发 GitHub Actions 构建并发布 Release。
-
-```bash
-# patch 递增（例如 0.1.0 -> 0.1.1），并写入本次更新说明
-npm run release -- patch "修复导出节点在大图下崩溃；优化启动速度"
-
-# 或指定版本号
-npm run release -- 0.2.0 "新增分镜批量裁剪工具"
-```
-
-命令会自动执行：
-- 同步版本号到 `package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json`
-- 提交版本变更并创建带说明的 tag（如 `v0.2.0`）
-- 推送分支和 tag，触发 `.github/workflows/build.yml`
-- 由 Action 构建 Windows/macOS 安装包并发布到 GitHub Releases（说明显示为 tag 注释）
-
 ## 项目结构（核心）
 
 ```text
 src/
   features/canvas/          # 画布主流程（节点、工具、模型、UI）
+  features/director3d/      # 3D 导演台（角色编排、相机机位、截图）
   stores/                   # 全局状态与自动持久化策略
   commands/                 # 前端到 Tauri 命令桥接
   i18n/                     # 国际化入口与语言包
@@ -122,6 +66,20 @@ src-tauri/src/
   lib.rs                    # Tauri 命令注册入口
 docs/development-guides/    # 开发与扩展文档
 ```
+
+## 核心功能
+
+### 2D 分镜画布
+- 节点化图片上传、AI 生成/编辑、工具处理（裁剪/标注/分镜）
+- 节点连线与流程编排
+- 多模型供应商支持
+
+### 3D 导演台
+- 3D 场景编辑器，支持角色放置与变换（移动/旋转/缩放）
+- TransformControls gizmo 交互
+- 相机机位系统（预设视角、自定义机位保存/切换）
+- 角色调色板与属性面板
+- 截图到画布（支持 16:9 / 9:16 比例）
 
 ## 架构要点
 
@@ -169,9 +127,3 @@ docs/development-guides/    # 开发与扩展文档
 - 入口：`src/i18n/index.ts`
 - 语言包：`src/i18n/locales/zh.json`、`src/i18n/locales/en.json`
 - 代码中使用 `useTranslation()` + `t('key.path')`，避免硬编码文案
-
-## 开发文档导航
-
-- [项目开发环境与注意事项](./docs/development-guides/project-development-setup.md)
-- [供应商与模型扩展指南](./docs/development-guides/provider-and-model-extension.md)
-- [基础工具安装配置（Windows / macOS）](./docs/development-guides/base-tools-installation.md)
