@@ -37,6 +37,9 @@ interface SettingsState {
   canvasEdgeRoutingMode: CanvasEdgeRoutingMode;
   autoCheckAppUpdateOnLaunch: boolean;
   enableUpdateDialog: boolean;
+  director3dScreenshotRatio: '16:9' | '9:16';
+  director3dScreenshotWidth: number;
+  screenshotSavePath: string;
   setProviderApiKey: (providerId: string, key: string) => void;
   setGrsaiNanoBananaProModel: (model: string) => void;
   setHideProviderGuidePopover: (hide: boolean) => void;
@@ -59,6 +62,9 @@ interface SettingsState {
   setCanvasEdgeRoutingMode: (mode: CanvasEdgeRoutingMode) => void;
   setAutoCheckAppUpdateOnLaunch: (enabled: boolean) => void;
   setEnableUpdateDialog: (enabled: boolean) => void;
+  setDirector3dScreenshotRatio: (ratio: '16:9' | '9:16') => void;
+  setDirector3dScreenshotWidth: (width: number) => void;
+  setScreenshotSavePath: (path: string) => void;
 }
 
 const HEX_COLOR_PATTERN = /^#?[0-9a-fA-F]{6}$/;
@@ -184,6 +190,9 @@ export const useSettingsStore = create<SettingsState>()(
       canvasEdgeRoutingMode: 'spline',
       autoCheckAppUpdateOnLaunch: true,
       enableUpdateDialog: true,
+      director3dScreenshotRatio: '16:9' as const,
+      director3dScreenshotWidth: 1920,
+      screenshotSavePath: '',
       setProviderApiKey: (providerId, key) =>
         set((state) => ({
           apiKeys: {
@@ -233,6 +242,9 @@ export const useSettingsStore = create<SettingsState>()(
         set({ canvasEdgeRoutingMode: normalizeCanvasEdgeRoutingMode(canvasEdgeRoutingMode) }),
       setAutoCheckAppUpdateOnLaunch: (enabled) => set({ autoCheckAppUpdateOnLaunch: enabled }),
       setEnableUpdateDialog: (enabled) => set({ enableUpdateDialog: enabled }),
+      setDirector3dScreenshotRatio: (ratio) => set({ director3dScreenshotRatio: ratio }),
+      setDirector3dScreenshotWidth: (width) => set({ director3dScreenshotWidth: width }),
+      setScreenshotSavePath: (path) => set({ screenshotSavePath: path }),
     }),
     {
       name: 'settings-storage',

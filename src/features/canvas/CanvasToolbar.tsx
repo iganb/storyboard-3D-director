@@ -8,11 +8,13 @@ import {
   Lock,
   Unlock,
   Trash2,
+  Clapperboard,
 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 
 import { CANVAS_NODE_TYPES } from '@/features/canvas/domain/canvasNodes';
 import { useCanvasStore } from '@/stores/canvasStore';
+import { useDirector3DStore } from '@/stores/director3dStore';
 
 interface CanvasToolbarProps {
   isLocked: boolean;
@@ -24,6 +26,7 @@ export const CanvasToolbar = memo(({ isLocked, onToggleLock }: CanvasToolbarProp
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const addNode = useCanvasStore((state) => state.addNode);
   const clearCanvas = useCanvasStore((state) => state.clearCanvas);
+  const enterDirector3D = useDirector3DStore((s) => s.enterDirector3D);
 
   const handleAddNode = useCallback(() => {
     const x = Math.random() * 320 + 120;
@@ -47,6 +50,23 @@ export const CanvasToolbar = memo(({ isLocked, onToggleLock }: CanvasToolbarProp
       >
         <Plus className="h-4 w-4" />
         {t('canvas.addImage')}
+      </button>
+
+      <button
+        onClick={enterDirector3D}
+        disabled={isLocked}
+        className={`
+          flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors duration-200
+          ${
+            isLocked
+              ? 'cursor-not-allowed border border-border-dark text-text-muted'
+              : 'border border-accent/40 text-accent hover:bg-accent/10'
+          }
+        `}
+        title={t('canvas.toolbar.director3d')}
+      >
+        <Clapperboard className="h-4 w-4" />
+        <span className="hidden sm:inline">{t('canvas.toolbar.director3d')}</span>
       </button>
 
       <div className="h-6 w-px bg-border-dark" />

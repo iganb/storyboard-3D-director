@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { invoke } from '@tauri-apps/api/core';
 import { Canvas } from './features/canvas/Canvas';
+import { Director3D } from './features/director3d/Director3D';
 import { TitleBar } from './components/TitleBar';
 import { SettingsDialog } from './components/SettingsDialog';
 import { UpdateAvailableDialog, type UpdateIgnoreMode } from './components/UpdateAvailableDialog';
@@ -10,6 +11,7 @@ import { ProjectManager } from './features/project/ProjectManager';
 import { useThemeStore } from './stores/themeStore';
 import { useProjectStore } from './stores/projectStore';
 import { useSettingsStore } from './stores/settingsStore';
+import { useDirector3DStore } from './stores/director3dStore';
 import {
   checkForUpdate,
   isUpdateVersionSuppressed,
@@ -54,6 +56,18 @@ function App() {
   const hydrate = useProjectStore((state) => state.hydrate);
   const currentProjectId = useProjectStore((state) => state.currentProjectId);
   const closeProject = useProjectStore((state) => state.closeProject);
+
+  const isDirector3DActive = useDirector3DStore((s) => s.isActive);
+  const leaveDirector3D = useDirector3DStore((s) => s.leaveDirector3D);
+
+  const handleBackClick = useCallback(() => {
+    if (isDirector3DActive) {
+      leaveDirector3D();
+    } else {
+      closeProject();
+      leaveDirector3D(); // also reset in case closing project while in 3D
+    }
+  }, [isDirector3DActive, leaveDirector3D, closeProject]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -215,11 +229,19 @@ function App() {
             setShowSettings(true);
           }}
           showBackButton={!!currentProjectId}
-          onBackClick={closeProject}
+          onBackClick={handleBackClick}
         />
 
         <main className="flex-1 relative">
-          {currentProjectId ? <Canvas /> : <ProjectManager />}
+          {currentProjectId ? (
+            isDirector3DActive ? (
+              <Director3D />
+            ) : (
+              <Canvas />
+            )
+          ) : (
+            <ProjectManager />
+          )}
         </main>
 
         <SettingsDialog

@@ -55,6 +55,7 @@ import { SelectedNodeOverlay } from './ui/SelectedNodeOverlay';
 import { NodeToolDialog } from './ui/NodeToolDialog';
 import { ImageViewerModal } from './ui/ImageViewerModal';
 import { MissingApiKeyHint } from '@/features/settings/MissingApiKeyHint';
+import { CanvasToolbar } from './CanvasToolbar';
 
 const DEFAULT_VIEWPORT: Viewport = { x: 0, y: 0, zoom: 1 };
 
@@ -236,6 +237,8 @@ export function Canvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const suppressNextPaneClickRef = useRef(false);
   const suppressNextEdgeClickRef = useRef(false);
+
+  const [isLocked, setIsLocked] = useState(false);
 
   const [showNodeMenu, setShowNodeMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -1629,6 +1632,11 @@ export function Canvas() {
 
         <SelectedNodeOverlay />
       </ReactFlow>
+
+      <CanvasToolbar
+        isLocked={isLocked}
+        onToggleLock={() => setIsLocked(!isLocked)}
+      />
 
       {nodes.length === 0 && emptyHint}
       {nodes.length > 0 && configuredApiKeyCount === 0 && (
