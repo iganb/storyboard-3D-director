@@ -281,6 +281,8 @@
     "accentColor": "Accent Color",
     "accentColorDesc": "Used by buttons, selected borders, and interaction highlights.",
     "resetAccentColor": "Reset",
+    "screenshotSavePath": "3D Screenshot Save Path",
+    "screenshotSavePathDesc": "3D director screenshots are saved to this directory; leave empty for browser download.",
     "downloadPresetPaths": "Download Preset Paths",
     "downloadPresetPathsDesc": "Used by node toolbar download menu for quick-save directories (up to 8).",
     "storyboardGenKeepStyleConsistent": "Keep storyboard style aligned with references",

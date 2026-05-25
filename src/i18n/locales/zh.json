@@ -281,6 +281,8 @@
     "accentColor": "强调色",
     "accentColorDesc": "用于按钮、选中边框和交互高亮。",
     "resetAccentColor": "恢复默认",
+    "screenshotSavePath": "3D 截图保存路径",
+    "screenshotSavePathDesc": "3D 导演台截图自动保存到该目录；留空则通过浏览器下载。",
     "downloadPresetPaths": "下载预设路径",
     "downloadPresetPathsDesc": "用于节点工具条下载菜单中的快速保存目录（最多 8 个）",
     "storyboardGenKeepStyleConsistent": "分镜图风格与参考图保持一致",

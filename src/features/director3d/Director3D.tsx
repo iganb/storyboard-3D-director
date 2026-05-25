@@ -1010,7 +1010,6 @@ export function Director3D() {
       document.body.removeChild(link);
     }
 
-    useDirector3DStore.getState().leaveDirector3D();
   }, []);
 
   // ── Add camera rig handler ────────────────────────────────────

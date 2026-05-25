@@ -110,6 +110,8 @@ export function SettingsDialog({
     canvasEdgeRoutingMode,
     autoCheckAppUpdateOnLaunch,
     enableUpdateDialog,
+    screenshotSavePath,
+    setScreenshotSavePath,
     setProviderApiKey,
     setGrsaiNanoBananaProModel,
     setDownloadPresetPaths,
@@ -183,6 +185,7 @@ export function SettingsDialog({
     autoCheckAppUpdateOnLaunch
   );
   const [localEnableUpdateDialog, setLocalEnableUpdateDialog] = useState(enableUpdateDialog);
+  const [localScreenshotSavePath, setLocalScreenshotSavePath] = useState(screenshotSavePath);
   const [checkUpdateStatus, setCheckUpdateStatus] = useState<'' | 'checking' | 'has-update' | 'up-to-date' | 'failed'>('');
   const [revealedApiKeys, setRevealedApiKeys] = useState<Record<string, boolean>>({});
   const { shouldRender, isVisible } = useDialogTransition(isOpen, UI_DIALOG_TRANSITION_MS);
@@ -232,6 +235,7 @@ export function SettingsDialog({
     setLocalCanvasEdgeRoutingMode(canvasEdgeRoutingMode);
     setLocalAutoCheckAppUpdateOnLaunch(autoCheckAppUpdateOnLaunch);
     setLocalEnableUpdateDialog(enableUpdateDialog);
+    setLocalScreenshotSavePath(screenshotSavePath);
     setCheckUpdateStatus('');
     setRevealedApiKeys({});
     setLocalDownloadPathInput('');
@@ -271,6 +275,7 @@ export function SettingsDialog({
     setCanvasEdgeRoutingMode(localCanvasEdgeRoutingMode);
     setAutoCheckAppUpdateOnLaunch(localAutoCheckAppUpdateOnLaunch);
     setEnableUpdateDialog(localEnableUpdateDialog);
+    setScreenshotSavePath(localScreenshotSavePath);
     onClose();
   }, [
     localApiKeys,
@@ -294,6 +299,7 @@ export function SettingsDialog({
     localCanvasEdgeRoutingMode,
     localAutoCheckAppUpdateOnLaunch,
     localEnableUpdateDialog,
+    localScreenshotSavePath,
     providers,
     setProviderApiKey,
     setGrsaiNanoBananaProModel,
@@ -316,6 +322,7 @@ export function SettingsDialog({
     setCanvasEdgeRoutingMode,
     setAutoCheckAppUpdateOnLaunch,
     setEnableUpdateDialog,
+    setScreenshotSavePath,
     onClose,
   ]);
 
@@ -951,6 +958,49 @@ export function SettingsDialog({
                         <div className="text-xs text-text-muted">{t('settings.noDownloadPresetPaths')}</div>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border-dark bg-bg-dark p-4">
+                  <div className="mb-3">
+                    <h3 className="text-sm font-medium text-text-dark">
+                      {t('settings.screenshotSavePath')}
+                    </h3>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {t('settings.screenshotSavePathDesc')}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={localScreenshotSavePath}
+                      onChange={(event) => setLocalScreenshotSavePath(event.target.value)}
+                      placeholder={t('settings.downloadPathPlaceholder')}
+                      className="h-9 flex-1 rounded border border-border-dark bg-surface-dark px-3 text-sm text-text-dark outline-none placeholder:text-text-muted"
+                    />
+                    <button
+                      type="button"
+                      className="inline-flex h-9 items-center justify-center rounded border border-border-dark bg-surface-dark px-3 text-xs text-text-dark transition-colors hover:bg-bg-dark"
+                      onClick={() => {
+                        void (async () => {
+                          try {
+                            const selected = await open({
+                              directory: true,
+                              multiple: false,
+                            });
+                            if (!selected || Array.isArray(selected)) {
+                              return;
+                            }
+                            setLocalScreenshotSavePath(selected);
+                          } catch (error) {
+                            console.error('Failed to pick screenshot save path', error);
+                          }
+                        })();
+                      }}
+                    >
+                      <FolderOpen className="mr-1 h-3.5 w-3.5" />
+                      {t('settings.chooseFolder')}
+                    </button>
                   </div>
                 </div>
 
